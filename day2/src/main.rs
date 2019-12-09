@@ -1,4 +1,3 @@
-extern crate itertools; // 0.7.8
 use std::convert::TryInto;
 use std::io;
 

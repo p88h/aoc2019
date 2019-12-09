@@ -2,7 +2,6 @@ use std::io;
 use std::collections::HashMap;  
 
 struct Node {
-    id: String,
     prev: String,
     direct: i32,
     indirect: i32,
@@ -12,7 +11,7 @@ struct Node {
 
 fn init_node<'a>(graph: &'a mut HashMap<String, Node>, id: &String) -> &'a mut Node {
     if !graph.contains_key(id) {
-        let n = Node { id: id.clone(), prev: String::from(""), direct: 0, indirect: 0, distance: 0, next: vec![] };
+        let n = Node { prev: String::from(""), direct: 0, indirect: 0, distance: 0, next: vec![] };
         graph.insert(id.clone(), n);
     }
     return graph.get_mut(id).unwrap();

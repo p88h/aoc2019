@@ -1,5 +1,3 @@
-extern crate itertools; // 0.7.8
-use std::convert::TryInto;
 use std::io;
 
 struct Op3 {
@@ -41,7 +39,7 @@ fn read2(v : &Vec<i32>, mode: i32, pos: usize) -> Op2 {
 } 
 
 fn read1(v : &Vec<i32>, mode: i32, pos: usize) -> i32 {
-    let mut v1 = v[pos+1].try_into().unwrap(); 
+    let mut v1 = v[pos+1]; 
     println!("@{} opcode {} mode {} : {}", pos, v[pos], mode, v1);
     if mode == 0 { v1 = v[v1 as usize]; }
     return v1;
