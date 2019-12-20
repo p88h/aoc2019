@@ -1,6 +1,7 @@
 extern crate pancurses;
 
 use std::env;
+use std::cmp;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -141,7 +142,84 @@ fn run_program(ic: & mut IntCode) -> Option<i64> {
     return None;
 }
 
+fn find_left_binary(py: usize, mut xmin: usize, mut xmax: usize, prog : &IntCode, cnt: &mut i64) -> usize {
+    while xmax != xmin {
+        let mut m = prog.clone();
+        let px = (xmax + xmin) / 2;
+        m.input.push(px as i64);
+        m.input.push(py as i64);
+        println!("Test: {:?}", m.input);
+        let r = run_program(&mut m);
+        if r.unwrap() == 1 {
+            xmax = px;
+        } else {
+            xmin = px + 1;
+        }
+        *cnt += 1;
+    }
+    return xmax;
+}
+
+fn find_left_slow(py: usize, mut xmin: usize, mut xmax: usize, prog : &IntCode, cnt: &mut i64) -> usize {
+    let mut px = xmin;
+    loop {
+        let mut m = prog.clone();
+        m.input.push(px as i64);
+        m.input.push(py as i64);
+        println!("Test: {:?}", m.input);
+        let r = run_program(&mut m);
+        *cnt += 1;
+        if r.unwrap() == 1 {
+            return px;
+        }
+        px += 1;
+    }
+}
+
 fn main() -> std::io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    let mut buf = String::new();
+    let mut file = File::open(&args[1])?;
+    file.read_to_string(&mut buf)?;
+    let split = buf.trim().split(",");
+    let mut memory : Vec<_> = split.filter_map(|x| x.parse::<i64>().ok()).collect();
+    memory.resize(10000000, 0);
+    let mut m = IntCode { prog: memory.to_vec(), input: vec![ ], pos: 0, ipos: 0, ccnt: 0, relbase: 0, finished: false };
+    let backup = m.clone();
+    let mut px = 0;
+    let mut py = 0;
+    let mut ymin : usize = 100;
+    let mut ymax : usize = 1000;
+    let mut cnt = 0;
+
+    // determine the lower bound angle
+    let p10 = find_left_slow(10, 0, 0, &backup, &mut cnt);
+    let p100 = find_left_binary(100, p10 * 10 - 10, p10 * 10 + 10, &backup, &mut cnt);
+    let p1000 = find_left_slow(1000, p100 * 10 - 10, p100 * 10 + 10, &backup, &mut cnt);
+    println!("@1000: {} cnt: {}", p1000, cnt);
+
+    while ymax != ymin {
+        py = (ymax + ymin) / 2;
+        px = (p1000 * py) / 1000;
+        find_left_binary(py, px - 10, px + 10, &backup, &mut cnt);        
+        m.input.push(px as i64 + 99);
+        m.input.push(py as i64 - 99);
+        println!("Test: {:?}", m.input);
+        let q = run_program(&mut m);
+        m = backup.clone();
+        cnt += 1;
+        println!("y: {} x: {} cnt: {} min: {} max: {} status: {}", py, px, cnt, ymin, ymax, q.unwrap());
+        if q.unwrap() == 1 {
+            ymax = py;
+        } else {
+            ymin = py + 1;
+        }
+    }
+    println!("Min: {}x{}", px, py - 100); 
+    Ok(())
+}
+
+fn main1() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let mut buf = String::new();
     let mut file = File::open(&args[1])?;
@@ -160,15 +238,15 @@ fn main() -> std::io::Result<()> {
     window.nodelay(true);
     let mw = window.get_max_x() as usize;
     let mut px : usize = 0;
-    let mut py : usize = 0;
+    let mut py : usize = 100;
     let mut cnt = 0;
     let pc = vec!['-', '\\', '|', '/' ];
     let mc = vec!['.', '#'];
     let mut pp = 0;
     let mut left = 0;
-    let mut lh = vec![];
+    let mut lh = vec![0; 100];
     let mut right = 0;
-    let mut rh = vec![];
+    let mut rh = vec![0; 100];
     let mut hp = 0;
     let mut state = 0;
     // m.prog[0] = 2;
@@ -214,7 +292,7 @@ fn main() -> std::io::Result<()> {
             if state == 0 && r.unwrap() == 1 {
                 // found left edge, skip to right side
                 if left < px { left = px; }
-                if right > px { let d = right - px; cnt += d as i64; px = right + 3; }
+                if right > px { let d = right - px; cnt += d as i64; px = right; }
                 state = 1;
                 while hp < rh.len() && rh[hp] < left { hp += 1; }
                 for hi in hp..rh.len() {
@@ -232,7 +310,7 @@ fn main() -> std::io::Result<()> {
                 right = px - 1;
                 lh.push(left);
                 rh.push(right);
-                px = left + 1;
+                px = left;
                 state = 0;
                 //window.mvaddstr(0, 2, format!("{}", cnt));
                 window.mvaddstr(0, 2, format!("@{} left={} right={} hp={} max={}@{}x{} exc={}",py,left,right,hp,sqm,sqx,sqy,exc));
