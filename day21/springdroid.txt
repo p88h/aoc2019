@@ -17,3 +17,19 @@ NOT C T$
 OR T J$
 AND D J$
 WALK$
+
+OR H T$
+OR E T$
+AND D J$
+RUN$
+#####@#.#.#..####
+
+OR E J$
+OR H J$
+AND D J$
+OR A T$
+AND B T$
+AND C T$
+NOT T T$
+AND T J$
+RUN$
