@@ -1,9 +1,9 @@
-use std::io;
-use std::env;
 use std::boxed::Box;
+use std::env;
+use std::io;
 
-const DECK_SIZE : usize = 119_315_717_514_047;
-const TRACE : usize = 2020;
+const DECK_SIZE: usize = 119_315_717_514_047;
+const TRACE: usize = 2020;
 
 fn mod_inverse(a: i128, base: i128) -> i128 {
     let mut exp = base - 2;
@@ -30,7 +30,7 @@ trait Deck {
 struct SlowDeck {
     cards: Vec<usize>,
     trace: usize,
-    size: usize
+    size: usize,
 }
 
 impl SlowDeck {
@@ -39,13 +39,17 @@ impl SlowDeck {
         for i in 0..size {
             cards[i] = i;
         }
-        SlowDeck{ cards: cards, trace: trace % size, size: size }
+        SlowDeck {
+            cards: cards,
+            trace: trace % size,
+            size: size,
+        }
     }
 }
 
 impl Deck for SlowDeck {
     fn reverse(&mut self) {
-        for i in 0..self.size/2 {
+        for i in 0..self.size / 2 {
             self.cards.swap(i, (self.size - i) - 1);
         }
     }
@@ -55,7 +59,7 @@ impl Deck for SlowDeck {
             tmp[(i + shift) % self.size] = self.cards[i];
         }
         self.cards = tmp;
-    }   
+    }
     fn deal(&mut self, ofs: usize) {
         let mut tmp = vec![0; self.size];
         for i in 0..self.size {
@@ -65,7 +69,9 @@ impl Deck for SlowDeck {
     }
     fn find(&mut self) -> usize {
         for i in 0..self.size {
-            if self.cards[i] == self.trace { return i }
+            if self.cards[i] == self.trace {
+                return i;
+            }
         }
         return 0;
     }
@@ -76,12 +82,16 @@ impl Deck for SlowDeck {
 struct FastDeck {
     trace: usize,
     size: usize,
-    value: usize
+    value: usize,
 }
 
 impl FastDeck {
     fn new(size: usize, trace: usize) -> FastDeck {
-        FastDeck{ trace: trace % size, size: size, value: trace % size }
+        FastDeck {
+            trace: trace % size,
+            size: size,
+            value: trace % size,
+        }
     }
 }
 
@@ -111,29 +121,42 @@ struct PolyDeck {
 
 impl PolyDeck {
     fn new(size: usize, trace: usize) -> PolyDeck {
-        PolyDeck{ trace: trace as i64 % size as i64, size: size as i128, a: 1, b: 0 }
+        PolyDeck {
+            trace: trace as i64 % size as i64,
+            size: size as i128,
+            a: 1,
+            b: 0,
+        }
     }
 
     // only really needed at the end
     fn norm(&mut self) {
-        if self.a < 0 { self.a += self.size; }
-        if self.b < 0 { self.b += self.size; }
+        if self.a < 0 {
+            self.a += self.size;
+        }
+        if self.b < 0 {
+            self.b += self.size;
+        }
         // println!("a: {} b: {}", self.a, self.b);
     }
 
     // f[i](x)= a*f[i-1](x)+b =>
     // f[i](x)= i%2 ? a*f[i-1](x)+b : f[i/2](f[i/2](x))
     fn apply(&self, iter: usize) -> (i128, i128) {
-        if iter == 0 { return (1,0) }
-        if iter == 1 { return (self.a, self.b) }
+        if iter == 0 {
+            return (1, 0);
+        }
+        if iter == 1 {
+            return (self.a, self.b);
+        }
         let (a1, b1) = self.apply(iter / 2);
         // a1*(a1*x + b1)+b1
         let mut a2 = (a1 * a1) % self.size;
         let mut b2 = (a1 * b1 + b1) % self.size;
         // a*(a2*x + b2)+b
         if iter % 2 == 1 {
-            a2 = (self.a * a2 ) % self.size;
-            b2 = (self.a * b2 + self.b ) % self.size;
+            a2 = (self.a * a2) % self.size;
+            b2 = (self.a * b2 + self.b) % self.size;
         }
         return (a2, b2);
     }
@@ -146,7 +169,9 @@ impl PolyDeck {
         let inv = mod_inverse(a, self.size);
         // println!("inv({}) => {}", self.size, inv);
         let mut fv = ((pos as i128 - b) * inv) % self.size;
-        if fv < 0 { fv += self.size; }
+        if fv < 0 {
+            fv += self.size;
+        }
         // println!("({} - {}) x {} % {} => {}", pos, b, inv, self.size, fv);
         return fv as usize;
     }
@@ -168,11 +193,13 @@ impl Deck for PolyDeck {
         self.norm();
     }
     fn find(&mut self) -> usize {
-        let mut fv = ((self.a*self.trace as i128)+self.b) % self.size;
+        let mut fv = ((self.a * self.trace as i128) + self.b) % self.size;
         // println!("({} * {} + {}) % {} = {}",self.a,self.trace,self.b,self.size, fv);
         // update trace position
         self.trace = fv as i64;
-        if fv < 0 { fv += self.size; }
+        if fv < 0 {
+            fv += self.size;
+        }
         return fv as usize;
     }
 }
@@ -195,7 +222,7 @@ impl Op for Reverse {
     }
 }
 struct Cut {
-    shift: usize
+    shift: usize,
 }
 impl Op for Cut {
     fn apply(&self, deck: &mut dyn Deck) {
@@ -203,7 +230,7 @@ impl Op for Cut {
     }
 }
 struct Deal {
-    ofs: usize
+    ofs: usize,
 }
 impl Op for Deal {
     fn apply(&self, deck: &mut dyn Deck) {
@@ -223,22 +250,26 @@ fn main() {
         trace = args[2].parse().expect("Not a number");
     }
     println!("Deck size: {} trace card: {}", size, trace);
-    let mut ops : Vec<Box<dyn Op>> = vec![];
+    let mut ops: Vec<Box<dyn Op>> = vec![];
     loop {
         let mut buf = String::new();
         io::stdin().read_line(&mut buf).expect("Failure");
         let split = buf.trim().split(" ").collect::<Vec<&str>>();
-        if split.len() < 2 { break; }
+        if split.len() < 2 {
+            break;
+        }
         if split[0] == "deal" && split[1] == "into" {
-            ops.push(Box::new(Reverse{}));
+            ops.push(Box::new(Reverse {}));
         } else if split[0] == "cut" {
-            let mut v : i64 = split[1].parse().expect("Not a number");
-            if v < 0 { v = size as i64 + v; }
+            let mut v: i64 = split[1].parse().expect("Not a number");
+            if v < 0 {
+                v = size as i64 + v;
+            }
             let uv = size - v as usize;
-            ops.push(Box::new(Cut{shift: uv}));
+            ops.push(Box::new(Cut { shift: uv }));
         } else if split[0] == "deal" && split[1] == "with" {
-            let k : usize = split[split.len() - 1].parse().expect("Not a number");
-            ops.push(Box::new(Deal{ofs: k}));
+            let k: usize = split[split.len() - 1].parse().expect("Not a number");
+            ops.push(Box::new(Deal { ofs: k }));
         }
     }
     let mut deck = auto_deck(size, trace);
@@ -255,7 +286,7 @@ fn main() {
         let pos = deck.find();
         println!("Result[{}]: {}", i + 1, pos);
         println!("Poly-F[{}]: {}", i + 1, poly.find());
-        println!("Poly-C[{}]: {}", pos, poly.compute(i+1, pos));
+        println!("Poly-C[{}]: {}", pos, poly.compute(i + 1, pos));
         println!("");
     }
     let iter = 101_741_582_076_661;
