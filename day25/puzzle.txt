@@ -1,0 +1,34 @@
+> antenna + boulder + spool + sand
+< antenna + boulder + spool + sand + mouse
+> antenna + boulder + spool + sand + hypercube
+> antenna + boulder + spool + sand + hypercube + mutex + ice cream => +mouse
+
+< mouse + boulder + spool + sand + hypercube + mutex + ice cream (-antenna)
+< mouse + antenna + spool + sand + hypercube + mutex + ice cream (-boulder)
+< mouse + antenna + boulder + sand + hypercube + mutex + ice cream (-spool)
+< mouse + antenna + boulder + spool + hypercube + mutex + ice cream (-sand)
+< mouse + antenna + boulder + spool + sand + mutex + ice cream (-hypercube)
+< mouse + antenna + boulder + spool + sand + hypercube + ice cream (-mutex)
+< mouse + antenna + boulder + spool + sand + hypercube + mutex (-ice cream)
+< mouse + antenna => -antenna
+
+> mouse + boulder
+> mouse + spool
+> mouse + hypercube
+> mouse + ice cream
+> mouse + mutex
+> mouse + sand
+
+> mouse + spool + sand + hypercube
+< mouse + spool + sand + hypercube + mutex 
+< mouse + spool + sand + hypercube + ice cream
+< mouse + spool + sand + hypercube + boulder
+
+> mouse + mutex + ice cream + boulder
+> mouse + mutex + ice cream + boulder + hypercube
+> mouse + mutex + ice cream + boulder + hypercube + sand
+> mouse + mutex + ice cream + boulder + hypercube + spool => + sand
+
+< mouse + sand + mutex => -mutex
+> mouse + sand + ice cream
+> 
